@@ -1,0 +1,8 @@
+{
+  "name": "Remix Noor-e-Hidayat",
+  "description": "A comprehensive Islamic companion app featuring Quran, Ahadith, Masnoon Duas, Prayer Times, Azan, Qibla, and Islamic History.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
