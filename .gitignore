@@ -1,18 +1,28 @@
-*.iml
-.gradle
-.kotlin
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
-local.properties
-.env
+```
+# Gradle
+.gradle/
+!gradle-wrapper.jar
+
+# Build results
+build/
+!build/**
+!build/**/*
+
+# Dependencies
+.libs/
+.libs-bundle/
+
+# Keystore
 debug.keystore
+*.jks
+
+# Local configuration
+local.properties
+
+# Reports
+**/reports/
+
+# Published documentation
+PUBLISH_GUIDE.md
+README_BUILD.md
+```
