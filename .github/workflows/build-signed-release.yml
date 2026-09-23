@@ -1,0 +1,75 @@
+name: Build signed release APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      KEYSTORE_PATH: ${{ runner.temp }}/release.jks
+      STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+      KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check release signing configuration
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in KEYSTORE_BASE64 STORE_PASSWORD KEY_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing $name. See docs/FREE_RELEASE.md."
+              exit 1
+            fi
+          done
+          umask 077
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.3.1'
+          cache-disabled: true
+      - name: Validate permanent key and prepare test key
+        shell: bash
+        run: |
+          set -euo pipefail
+          keytool -list -keystore "$KEYSTORE_PATH" -storepass:env STORE_PASSWORD -alias upload
+          keytool -genkeypair -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -dname "CN=Local Test" -keyalg RSA -keysize 2048 -validity 3650
+      - name: Test and build signed release
+        run: gradle --no-daemon :app:testDebugUnitTest :app:lintRelease :app:assembleRelease
+      - name: Verify APK signature and package metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release-output
+          cp app/build/outputs/apk/release/app-release.apk release-output/Noor-e-Hidayat.apk
+          build_tools="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+          "$build_tools/apksigner" verify --verbose --print-certs release-output/Noor-e-Hidayat.apk | tee release-output/signature.txt
+          "$build_tools/aapt" dump badging release-output/Noor-e-Hidayat.apk > release-output/package-info.txt
+          if grep -q "^application-debuggable" release-output/package-info.txt; then
+            echo "::error::Release APK must not be debuggable"
+            exit 1
+          fi
+          cd release-output
+          sha256sum Noor-e-Hidayat.apk > SHA256SUMS.txt
+      - name: Upload signed APK and verification evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: Noor-e-Hidayat-signed-release-${{ github.run_number }}
+          path: release-output/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Remove signing material
+        if: always()
+        shell: bash
+        run: rm -f "$KEYSTORE_PATH" debug.keystore
