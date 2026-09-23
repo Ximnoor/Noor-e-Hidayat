@@ -17,8 +17,8 @@ android {
     applicationId = "com.aistudio.noorehidayat.nuigjs"
     minSdk = 24
     targetSdk = 36
-    versionCode = 1
-    versionName = "1.0"
+    versionCode = 2
+    versionName = "1.1-preview"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -46,7 +46,10 @@ android {
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
       signingConfig = signingConfigs.getByName("release")
     }
-    debug { signingConfig = signingConfigs.getByName("debugConfig") }
+    debug {
+      applicationIdSuffix = ".preview"
+      signingConfig = signingConfigs.getByName("debugConfig")
+    }
   }
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_11
@@ -139,3 +142,25 @@ dependencies {
   "ksp"(libs.androidx.room.compiler)
   "ksp"(libs.moshi.kotlin.codegen)
 }
+
+
+// CC0 recording by Adam-synagda. Pin the bytes so a remote replacement fails closed.
+val azanResources = layout.buildDirectory.dir("generated/azan/res")
+val prepareAzan by tasks.registering {
+    val target = azanResources.map { it.file("raw/azan_classic.ogg") }
+    outputs.file(target)
+    doLast {
+        val output = target.get().asFile
+        output.parentFile.mkdirs()
+        val connection = java.net.URI("https://upload.wikimedia.org/wikipedia/commons/b/b0/Beautiful_adhan.ogg").toURL().openConnection()
+        connection.connectTimeout = 30000
+        connection.readTimeout = 60000
+        connection.setRequestProperty("User-Agent", "Noor-e-Hidayat/1.1 (CC0 audio download)")
+        val bytes = connection.getInputStream().use { it.readBytes() }
+        val digest = java.security.MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
+        check(digest == "35fe06b08fe80505c550c33fed8a783fa9901ddc81ac884958b4be048f5b2a79") { "Azan recording checksum mismatch" }
+        output.writeBytes(bytes)
+    }
+}
+android.sourceSets.getByName("main").res.srcDir(azanResources)
+tasks.named("preBuild") { dependsOn(prepareAzan) }

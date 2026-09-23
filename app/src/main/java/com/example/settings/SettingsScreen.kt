@@ -149,7 +149,16 @@ fun SettingsScreen() {
 
         // Azan Sound Selector
         var expanded by remember { mutableStateOf(false) }
-        val sounds = listOf("Default", "Makkah", "Madina")
+        val sounds = listOf("Classic", "Default", "Custom")
+        val audioPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri != null) {
+                try {
+                    context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    context.getSharedPreferences("settings_prefs", android.content.Context.MODE_PRIVATE).edit().putString("custom_azan_uri", uri.toString()).apply()
+                    viewModel.setAzanSound("Custom")
+                } catch (_: Exception) { android.widget.Toast.makeText(context, "Could not keep access to that audio file.", android.widget.Toast.LENGTH_LONG).show() }
+            }
+        }
         
         Text(
             text = "Azan Sound",
@@ -184,7 +193,7 @@ fun SettingsScreen() {
                     DropdownMenuItem(
                         text = { Text(sound) },
                         onClick = {
-                            viewModel.setAzanSound(sound)
+                            if (sound == "Custom") audioPicker.launch(arrayOf("audio/*")) else viewModel.setAzanSound(sound)
                             expanded = false
                         }
                     )
@@ -193,6 +202,15 @@ fun SettingsScreen() {
         }
 
         Spacer(modifier = Modifier.height(32.dp))
+        Text("Classic Azan: Adam-synagda (CC0). Choose Custom to use your own Azan recording. Default uses the phone notification sound.")
+        Row {
+            TextButton(onClick = {
+                try { androidx.core.content.ContextCompat.startForegroundService(context, Intent(context, com.example.essentials.AzanPlaybackService::class.java).putExtra("name", "Azan preview")) }
+                catch (_: RuntimeException) { android.widget.Toast.makeText(context, "Audio playback unavailable", android.widget.Toast.LENGTH_SHORT).show() }
+            }) { Text("Preview Azan") }
+            TextButton(onClick = { context.stopService(Intent(context, com.example.essentials.AzanPlaybackService::class.java)) }) { Text("Stop") }
+        }
+        TextButton(onClick = { com.example.essentials.openSource(context, "https://commons.wikimedia.org/wiki/File:Beautiful_adhan.ogg") }) { Text("Audio source & CC0 license") }
         Text(
             text = "Prayer Alerts",
             fontSize = 16.sp,
@@ -286,3 +304,4 @@ fun PrayerToggleRow(prayerName: String, isEnabled: Boolean, onToggle: (Boolean) 
         )
     }
 }
+

@@ -23,7 +23,7 @@ class GreetingScreenshotTest {
   fun app_placeholder_screenshot() {
     composeTestRule.setContent {
       NoorEHidayatTheme {
-        PlaceholderScreen("Noor-e-Hidayat")
+        com.example.home.HomeScreen()
       }
     }
 
@@ -32,3 +32,4 @@ class GreetingScreenshotTest {
     )
   }
 }
+

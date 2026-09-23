@@ -31,7 +31,7 @@ import com.example.data.local.Dua
 fun DuasScreen() {
     val viewModel: DuasViewModel = viewModel()
     var selectedTab by remember { mutableStateOf(0) }
-    val tabs = listOf("Duas", "Azkar", "Tasbih")
+    val tabs = listOf("Urdu Duas", "Azkar", "Tasbih")
 
     Column(
         modifier = Modifier
@@ -91,7 +91,7 @@ fun DuasScreen() {
         Spacer(modifier = Modifier.height(16.dp))
 
         when (selectedTab) {
-            0 -> DuasListSection(viewModel)
+            0 -> com.example.essentials.MasnoonDuasScreen()
             1 -> AzkarListSection()
             2 -> TasbihCounterSection()
         }
@@ -331,3 +331,4 @@ fun DuaCard(dua: Dua, onFavoriteToggle: () -> Unit) {
         }
     }
 }
+

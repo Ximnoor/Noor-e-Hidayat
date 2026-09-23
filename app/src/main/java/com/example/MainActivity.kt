@@ -74,14 +74,9 @@ class MainActivity : ComponentActivity() {
             requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
 
-        val hidayahWorkRequest = PeriodicWorkRequestBuilder<HidayahWorker>(1, TimeUnit.DAYS)
-            .build()
-        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
-            "HidayahDailyNotification",
-            ExistingPeriodicWorkPolicy.KEEP,
-            hidayahWorkRequest
-        )
+        WorkManager.getInstance(this).cancelUniqueWork("HidayahDailyNotification")
 
+        com.example.essentials.PrayerPreferences.startWorker(this)
         enableEdgeToEdge()
         setContent {
             val settingsViewModel = androidx.lifecycle.viewmodel.compose.viewModel<com.example.settings.SettingsViewModel>()
@@ -139,7 +134,9 @@ fun MainScreen(settingsViewModel: com.example.settings.SettingsViewModel) {
         }
     ) { innerPadding ->
         NavHost(navController, startDestination = Screen.Home.route, Modifier.padding(innerPadding)) {
-            composable(Screen.Home.route) { HomeScreen() }
+            composable(Screen.Home.route) { HomeScreen { navController.navigate(it) } }
+            composable("masnoon") { com.example.essentials.MasnoonDuasScreen() }
+            composable("stories") { com.example.essentials.StoriesScreen() }
             composable(Screen.Quran.route) { com.example.quran.QuranScreen() }
             composable(Screen.Prayer.route) { com.example.prayer.PrayerScreen() }
             composable(Screen.Duas.route) { com.example.duas.DuasScreen() }
@@ -158,3 +155,4 @@ fun PlaceholderScreen(title: String) {
         Text(title)
     }
 }
+

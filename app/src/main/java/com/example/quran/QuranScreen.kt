@@ -33,6 +33,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 @Composable
 fun QuranScreen() {
     val viewModel: QuranViewModel = viewModel()
+    var readingSurah by remember { mutableStateOf<Int?>(null) }
+    if (readingSurah != null) {
+        androidx.activity.compose.BackHandler { readingSurah = null }
+        com.example.essentials.QuranReader(readingSurah!!) { readingSurah = null }
+        return
+    }
+    val reciter by viewModel.reciter.collectAsState()
+    val playbackError by viewModel.playbackError.collectAsState()
     val completedSurahs by viewModel.completedSurahs.collectAsState()
     val currentlyPlayingSurah by viewModel.currentlyPlayingSurah.collectAsState()
     val currentlyPlayingAyah by viewModel.currentlyPlayingAyah.collectAsState()
@@ -48,6 +56,10 @@ fun QuranScreen() {
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
+        com.example.essentials.ChoiceButton("Qari: ${reciter.name}", QuranViewModel.reciters.map { it.name }) { name ->
+            viewModel.selectReciter(QuranViewModel.reciters.first { it.name == name })
+        }
+        playbackError?.let { Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(12.dp)) }
         // Top Progress Header
         Box(
             modifier = Modifier
@@ -104,6 +116,7 @@ fun QuranScreen() {
         ) {
             items(SurahData.surahs) { surah ->
                 val isCompleted = completedSurahs.contains(surah.number)
+                TextButton(onClick = { readingSurah = surah.number }) { Text("${surah.number}. ${surah.name} — پڑھیں / تفسیر") }
                 SurahItem(
                     surah = surah,
                     isCompleted = isCompleted,
@@ -262,4 +275,5 @@ fun SurahItem(
         }
     }
 }
+
 

@@ -25,7 +25,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val _ishaEnabled = MutableStateFlow(prefs.getBoolean("isha_enabled", true))
     val ishaEnabled: StateFlow<Boolean> = _ishaEnabled.asStateFlow()
 
-    private val _azanSound = MutableStateFlow(prefs.getString("azan_sound", "Default") ?: "Default")
+    private val _azanSound = MutableStateFlow(prefs.getString("azan_sound", "Classic")?.takeIf { it in listOf("Classic", "Default", "Custom") } ?: "Classic")
     val azanSound: StateFlow<String> = _azanSound.asStateFlow()
 
     private val _appTheme = MutableStateFlow(prefs.getString("app_theme", "System Default") ?: "System Default")
@@ -33,6 +33,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     fun togglePrayer(prayer: String, enabled: Boolean) {
         prefs.edit().putBoolean("${prayer.lowercase()}_enabled", enabled).apply()
+        com.example.essentials.PrayerAlerts.restore(getApplication())
         when (prayer.lowercase()) {
             "fajr" -> _fajrEnabled.value = enabled
             "dhuhr" -> _dhuhrEnabled.value = enabled
@@ -52,3 +53,4 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         _appTheme.value = theme
     }
 }
+
